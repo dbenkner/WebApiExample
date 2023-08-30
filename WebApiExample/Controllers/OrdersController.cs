@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -40,7 +41,7 @@ namespace WebApiExample.Controllers
           {
               return NotFound();
           }
-            var order = await _context.Orders.Include(x => x.Customer).SingleOrDefaultAsync(x => x.Id == id);
+            var order = await _context.Orders.Include(x => x.Customer).Include(x => x.Orderlines)!.ThenInclude(x => x.Item).SingleOrDefaultAsync(x => x.Id == id);
 
             if (order == null)
             {
@@ -48,6 +49,17 @@ namespace WebApiExample.Controllers
             }
 
             return order;
+        }
+        [HttpGet("ok")]
+        public async Task<ActionResult<IEnumerable<Order>>> OrdersOk()
+        {
+            var result = await _context.Orders.Where(x => x.Status == "OK").Include(x => x.Customer).ToListAsync();
+            if (result == null)
+            {
+                return NotFound();
+            }
+            return result;
+           
         }
 
         // PUT: api/Orders/5
@@ -80,6 +92,27 @@ namespace WebApiExample.Controllers
 
             return NoContent();
         }
+        // api/Orders/ok/id
+        [HttpPut("ok/{id}")]
+        public async Task<IActionResult> updateOk(int id, Order order)
+        {
+            order.Status = "OK";
+            return await PutOrder(id, order);
+        }
+
+        [HttpPut("back/{id}")]
+        public async Task<IActionResult> updateBackOrder(int id, Order order)
+        {
+            order.Status = "Back Order";
+            return await PutOrder(id, order);
+        }
+        [HttpPut("closed/{Id}")]
+        public async Task<IActionResult> updateClosedOrder(int id, Order order)
+        {
+            order.Status = "Closed";
+            return await PutOrder(id, order);
+        }
+
 
         // POST: api/Orders
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
